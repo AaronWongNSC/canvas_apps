@@ -21,14 +21,18 @@ This program will create (or recreate) the course inventory for all of the class
 
 # Applications
 
-## Discussion Post Counter
+## Discussion_Post_Counter.py
 
 This program counts the number of posts made by students under a discussion topic.
 
-## Due Date Adjuster
+## Due_Date_Adjuster.py
 
 This program adjusts the due dates of assignments using a CSV file. The program will both generate a blank CSV file to be filled in and upload it.
 
-## Last Participation Checker
+## Last_Participation_Checker.py
 
 This program finds the student's last submission and due date of the last assignment submitted. This can be used to identify a student's last participation in the course.
+
+## Participation_Grader.py
+
+Grades an assignment based on participation. Full credit if there is a submission and no credit if there is not.
