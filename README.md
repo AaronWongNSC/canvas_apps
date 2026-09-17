@@ -36,3 +36,7 @@ This program finds the student's last submission and due date of the last assign
 ## Participation_Grader.py
 
 Grades an assignment based on participation. Full credit if there is a submission and no credit if there is not.
+
+## Text_Entry_Fast_Grader.py
+
+Quickly grade assignments that use the online text entry box for student submissions.
