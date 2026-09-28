@@ -15,10 +15,6 @@ Here, `INSTITUTION` is the institution URL, as in `INSTITUTION.instructure.com`.
 
 Run this program first! This will first create a `course_data` folder that will contain all the inventory files for the various scripts. Then it will ask for a search string for the courses that you want to have easy access to. (For example, you can use "Fa26" to search for Fall 2026 courses under the NSU course naming convention.) These courses will be stored in a file called courses.csv for future usage.
 
-## Inventory_Generator.py
-
-This program will create (or recreate) the course inventory for all of the classes in the courses.csv file. It should take less than a minute per course.
-
 # Applications
 
 ## Discussion_Post_Counter.py
