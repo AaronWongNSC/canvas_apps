@@ -1,15 +1,27 @@
 from canvas_apps.connect import connect, disconnect, get_course
-from canvas_apps.util.data import inventory, json_read, dict_str_match, commas
+from canvas_apps.util.data import dict_str_match, commas, load_assignments
 from canvas_apps.util.date import split_ztime, local_date_time_to_ztime, ztime_to_local
 
 import csv
+
+########### ERROR CATCHER
+import sys
+import traceback
+
+def hold_window_on_error(exc_type, exc_value, tb):
+    traceback.print_exception(exc_type, exc_value, tb)    
+    input("\nAn error occurred. Press Enter to close...")
+    sys.exit(-1)
+
+sys.excepthook = hold_window_on_error
+######################################################################
 
 ## Connect to Canvas
 canvas = connect()
 course = get_course(canvas)
 
 ## Load assignment data
-assignments = json_read(f'course_data/{course.id}-assignments')
+assignments = load_assignments(course)
 
 # Menu
 print('''
@@ -64,29 +76,29 @@ elif command == 2:
         for row in reader:
 
             ## Set midnight times for non-existent times
-            if row['unlock_time'] == '':
+            if row['unlock_time'].strip() == '':
                 row['unlock_time'] = '23:59'
-            if row['due_time'] == '':
+            if row['due_time'].strip() == '':
                 row['due_time'] = '23:59'
-            if row['lock_time'] == '':
+            if row['lock_time'].strip() == '':
                 row['lock_time'] = '23:59'
 
             ## Create z_time objects
-            if row['unlock_date']:
+            if row['unlock_date'].strip():
                 unlock_at = local_date_time_to_ztime(row['unlock_date'], row['unlock_time'])
                 unlock_at_local = ztime_to_local(unlock_at)
             else:
                 unlock_at = ''
                 unlock_at_local = '(None)'
 
-            if row['due_date']:
+            if row['due_date'].strip():
                 due_at = local_date_time_to_ztime(row['due_date'], row['due_time'])
                 due_at_local = ztime_to_local(due_at)
             else:
                 due_at = ''
                 due_at_local = '(None)'
 
-            if row['lock_date']:
+            if row['lock_date'].strip():
                 lock_at = local_date_time_to_ztime(row['lock_date'], row['lock_time'])
                 lock_at_local = ztime_to_local(lock_at)
             else:

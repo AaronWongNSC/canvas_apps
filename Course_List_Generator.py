@@ -4,6 +4,18 @@ from canvas_apps.util.data import paginated_to_dict, dict_str_match
 import csv
 from pathlib import Path
 
+########### ERROR CATCHER
+import sys
+import traceback
+
+def hold_window_on_error(exc_type, exc_value, tb):
+    traceback.print_exception(exc_type, exc_value, tb)    
+    input("\nAn error occurred. Press Enter to close...")
+    sys.exit(-1)
+
+sys.excepthook = hold_window_on_error
+######################################################################
+
 COURSE_DATA_FOLDER = 'course_data'
 COURSE_DATA_FILE = COURSE_DATA_FOLDER + '/courses.csv'
 

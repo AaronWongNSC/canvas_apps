@@ -1,5 +1,5 @@
 from canvas_apps.connect import connect, disconnect, get_course
-from canvas_apps.util.data import json_read
+from canvas_apps.util.data import load_assignments, load_users
 from canvas_apps.util.html import cleanse, deTeX
 
 from pathlib import Path
@@ -12,8 +12,9 @@ canvas = connect()
 course = get_course(canvas)
 
 ## Load user and assignment data
-users = json_read(f'course_data/{course.id}-users')
-assignments = json_read(f'course_data/{course.id}-assignments')
+users = load_users(course)
+print(users)
+assignments = load_assignments(course)
 
 ## Sift/sort assignments
 assignments = {
@@ -40,13 +41,21 @@ submissions = assignment.get_submissions()
 
 for submission in submissions:
     ## Reset values
+    try:
+        student_name = users[str(submission.user_id)]['name']
+    except:
+        print('Skipping unenrolled student')
+        continue
+
     points_possible = assignment.points_possible
-    student_name = users[str(submission.user_id)]['name']
+    
     current_score = submission.score
     grade_change = False
     score = None
     comment = None
     default = None
+    response = None
+    prompt = None
 
     current_text = ''
     comment_text = ''
@@ -67,6 +76,7 @@ for submission in submissions:
             prompt = '[Enter] for full credit with no comment, [score]|[comment] for specific score with comment, [X] to skip: '
             default = points_possible
     else:
+        prompt = '[Enter] for no credit with no comment, [score]|[comment] for specific score with comment, [X] to skip: '
         response = '[No Submission]'
         default = 0
 
@@ -74,7 +84,7 @@ for submission in submissions:
     grade = input(prompt)
         
     if grade == '':
-        if default:
+        if default is not None:
             grade_change = True
             score = default
     elif grade == 'X':
@@ -93,8 +103,8 @@ for submission in submissions:
         submission.edit(
             submission={'posted_grade': score},
             comment={'text_comment': comment})
-        print(f'Grade updated to {score}/{points_possible} {comment_text}')
+        print(f'\n *** Grade updated to {score}/{points_possible} {comment_text}')
     else:
-        print(f'No grade change for {student_name}')
+        print(f'\n *** No grade change for {student_name}')
 
 disconnect()
