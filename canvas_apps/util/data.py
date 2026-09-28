@@ -2,8 +2,15 @@
 Utilities to work with data
 """
 
+from canvasapi.canvas import Canvas
 from canvasapi.course import Course
 from canvasapi.paginated_list import PaginatedList
+
+from canvas_apps.util.date import local_dt_to_ztime
+
+from datetime import datetime
+from pathlib import Path
+
 import json
 
 def commas(values:list) -> str:
@@ -22,35 +29,6 @@ def commas(values:list) -> str:
     """
     modified_values = [ f'{value}'.replace('"', '""') for value in values ]
     return ','.join([f'"{value}"' for value in modified_values]) + '\n'
-
-def course_inventory(course:Course, folder:str = '') -> bool:
-    """Creates a course inventory for the given course_id. The inventory includes
-    modules, pages, assignments, assignment_groups, files, and users.
-
-    Parameters
-    ----------
-    course_id : int
-        The course_id of the course being inventoried
-
-    Returns
-    -------
-    bool
-        True if the inventory was successful. False if there was an error
-    """
-    try:
-        if folder.endswith('/'):
-            folder = folder[:-1]
-        inventory(course.get_modules(), f'{folder}/{course.id}-modules.json')
-        inventory(course.get_pages(), f'{folder}/{course.id}-pages.json', id='page_id')
-        inventory(course.get_assignments(), f'{folder}/{course.id}-assignments.json')
-        inventory(course.get_assignment_groups(), f'{folder}/{course.id}-assignment_groups.json')
-        inventory(course.get_discussion_topics(), f'{folder}/{course.id}-discussion-topics.json')
-        inventory(course.get_files(), f'{folder}/{course.id}-files.json')
-        inventory(course.get_users(enrollment_type=['student', 'student_view', 'teacher']), f'{folder}/{course.id}-users.json')
-        return True
-    except:
-        return False
-
 
 def dict_str_match(search_dict:dict, search_key:str, target_value:str) -> list:
     """Searches a dictionary of dictionaries by key and returns a list of entries for which
@@ -73,7 +51,7 @@ def dict_str_match(search_dict:dict, search_key:str, target_value:str) -> list:
     match = []
     for _, contents in search_dict.items():
         try:
-            if target_value in contents[search_key]:
+            if target_value.casefold() in contents[search_key].casefold():
                 match.append(contents)
         except:
             pass
@@ -99,7 +77,6 @@ def inventory(paginated: PaginatedList, filename: str, id:str = 'id') -> dict:
     data = paginated_to_dict(paginated, id)
     json_write(data, filename)
     print(f'{filename} inventory complete.')
-
     return data
 
 def json_write(data: dict, filename: str) -> None:
@@ -142,19 +119,185 @@ def json_read(filename: str) -> dict:
         A dictionary that contains the data. If the data was not loaded properly,
         the dictionary will be empty.
     """
-    try:
-        if not filename.endswith('.json'):
-            filename += '.json'
-        with open(filename, 'r') as in_file:
-            return json.load(in_file)
-    except:
-        return {}
+    if not filename.endswith('.json'):
+        filename += '.json'
+    with open(filename, 'r') as in_file:
+        return json.load(in_file)
+
+def load_announcements(canvas:Canvas, course:Course) -> dict:
+    """Loads the announcement data. First attempt is by file, then through Canvas.
+	
+    Parameters
+    ----------
+    course: Course
+        The Course from which to load the data.
+
+    Returns
+    -------
+    dict
+        A dictionary that contains the data.
+    """
+    filename = f'course_data/{course.id}-announcements.json'
+    file_path = Path(filename)
+    if not file_path.is_file():
+        print(f'Announcement data for {course.name} ({course.id}) not found at {filename}')
+        print('Downloading data from Canvas')
+        start_date = course.created_at
+        end_date = local_dt_to_ztime(datetime.now())
+        inventory(canvas.get_announcements([course], start_date=start_date, end_date=end_date), filename)
+    return json_read(filename)
+
+def load_assignments(course:Course) -> dict:
+    """Loads the assignment data. First attempt is by file, then through Canvas.
+	
+    Parameters
+    ----------
+    course: Course
+        The Course from which to load the data.
+
+    Returns
+    -------
+    dict
+        A dictionary that contains the data.
+    """
+    filename = f'course_data/{course.id}-assignments.json'
+    file_path = Path(filename)
+    if not file_path.is_file():
+        print(f'Assignment data for {course.name} ({course.id}) not found at {filename}')
+        print('Downloading data from Canvas')
+        inventory(course.get_assignments(), filename)
+    return json_read(filename)
+
+def load_assignment_groups(course:Course) -> dict:
+    """Loads the assignment_group data. First attempt is by file, then through Canvas.
+	
+    Parameters
+    ----------
+    course: Course
+        The Course from which to load the data.
+
+    Returns
+    -------
+    dict
+        A dictionary that contains the data.
+    """
+    filename = f'course_data/{course.id}-assignment_groups.json'
+    file_path = Path(filename)
+    if not file_path.is_file():
+        print(f'Assignment group data for {course.name} ({course.id}) not found at {filename}')
+        print('Downloading data from Canvas')
+        inventory(course.get_assignment_groups(), filename)
+    return json_read(filename)
+
+def load_discussions(course:Course) -> dict:
+    """Loads the discussion data. First attempt is by file, then through Canvas.
+	
+    Parameters
+    ----------
+    course: Course
+        The Course from which to load the data.
+
+    Returns
+    -------
+    dict
+        A dictionary that contains the data.
+    """
+    filename = f'course_data/{course.id}-discussions.json'
+    file_path = Path(filename)
+    if not file_path.is_file():
+        print(f'Discussions data for {course.name} ({course.id}) not found at {filename}')
+        print('Downloading data from Canvas')
+        inventory(course.get_discussion_topics(), filename)
+    return json_read(filename)
+
+def load_files(course:Course) -> dict:
+    """Loads the file data. First attempt is by file, then through Canvas.
+	
+    Parameters
+    ----------
+    course: Course
+        The Course from which to load the data.
+
+    Returns
+    -------
+    dict
+        A dictionary that contains the data.
+    """
+    filename = f'course_data/{course.id}-files.json'
+    file_path = Path(filename)
+    if not file_path.is_file():
+        print(f'File data for {course.name} ({course.id}) not found at {filename}')
+        print('Downloading data from Canvas')
+        inventory(course.get_files(), filename)
+    return json_read(filename)
+
+def load_modules(course:Course) -> dict:
+    """Loads the module data. First attempt is by file, then through Canvas.
+	
+    Parameters
+    ----------
+    course: Course
+        The Course from which to load the data.
+
+    Returns
+    -------
+    dict
+        A dictionary that contains the data.
+    """
+    filename = f'course_data/{course.id}-modules.json'
+    file_path = Path(filename)
+    if not file_path.is_file():
+        print(f'Module data for {course.name} ({course.id}) not found at {filename}')
+        print('Downloading data from Canvas')
+        inventory(course.get_modules(), filename)
+    return json_read(filename)
+
+def load_pages(course:Course) -> dict:
+    """Loads the page data. First attempt is by file, then through Canvas.
+	
+    Parameters
+    ----------
+    course: Course
+        The Course from which to load the data.
+
+    Returns
+    -------
+    dict
+        A dictionary that contains the data.
+    """
+    filename = f'course_data/{course.id}-pages.json'
+    file_path = Path(filename)
+    if not file_path.is_file():
+        print(f'Page data for {course.name} ({course.id}) not found at {filename}')
+        print('Downloading data from Canvas')
+        inventory(course.get_pages(), filename, id='page_id')
+    return json_read(filename)
+
+def load_users(course:Course) -> dict:
+    """Loads the page data. First attempt is by file, then through Canvas.
+	
+    Parameters
+    ----------
+    course: Course
+        The Course from which to load the data.
+
+    Returns
+    -------
+    dict
+        A dictionary that contains the data.
+    """
+    filename = f'course_data/{course.id}-users.json'
+    file_path = Path(filename)
+    if not file_path.is_file():
+        print(f'User data for {course.name} ({course.id}) not found at {filename}')
+        print('Downloading data from Canvas')
+        inventory(course.get_users(enrollment_type=['student', 'student_view', 'teacher', 'ta', 'designer', 'observer']), filename)
+    return json_read(filename)
 
 def paginated_to_dict(paginated: PaginatedList, id:str = 'id') -> dict:
     """Converts a PaginatedList into a dictionary of dictionaries whose keys are the indicated 
     key and whose contents are the Canvas objects. This process removes the datetime objects
     and requester object so that the data can be written to JSON without any problems.
-
 
     Parameters
     ----------

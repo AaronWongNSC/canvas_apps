@@ -5,7 +5,10 @@ Main connection scripts
 from canvasapi import Canvas
 from canvasapi.course import Course
 
+from canvas_apps.util.data import paginated_to_dict, dict_str_match
 from canvas_apps.ui import get_id_from_file
+
+from pathlib import Path
 
 def connect(INSTITUTION:str = 'nevadastate') -> Canvas:
     """Begins the connection protocol to Canvas through canvasapi.
@@ -80,9 +83,40 @@ To get an API key:
         disconnect()
 
 def get_course(canvas:Canvas) -> Course:
-    course_id = get_id_from_file('course_data/courses.csv')
-    if course_id == False:
-        course_id = int(input('Enter the Course ID: '))
+    filename = 'course_data/courses.csv'
+    file_path = Path(filename)
+    if not file_path.is_file():
+        print(f'Course data not found at {filename}')
+        ## Check if the course_data folder exists. Create it if it doesn't.
+        folder_path = Path('course_data')
+        folder_path.mkdir(parents=True, exist_ok=True)
+
+        ## Get full list of courses
+        courses = paginated_to_dict(canvas.get_courses())
+
+        ## Search
+        search_string = input('Enter the search string for the course titles: ')
+        matches = dict_str_match(courses, 'name', search_string)
+
+        if matches:
+            ## If matches found, determine whether to add or replace
+            print('Matches Found: ')
+            my_courses = {}
+            for course in matches:
+                my_courses[course['id']] = course['name']
+
+            ## Update the courses.csv file
+            with open(filename, 'w') as file:
+                file.write('id,name\n')
+                for id, name in my_courses.items():
+                    file.write(f'{id},{name}\n')
+        else:
+            print('No matches\n')
+            with open(filename, 'w') as file:
+                file.write('id,name\n')
+
+    course_id = get_id_from_file(filename)
+
     return canvas.get_course(course_id)
 
 def disconnect():

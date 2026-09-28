@@ -34,8 +34,12 @@ def get_id_from_file(file:str = None) -> int:
                 print(f'{index}: {row['name']} ({row['id']})')
                 objects.append(row['id'])
 
-        choice = input('Select an object: ')
-        return objects[int(choice)]
+        if len(objects) > 0:
+            choice = input('Select an object: ')
+            return objects[int(choice)]
+        else:
+            print(f'No objects found in {filename}. Use the Course_List_Generator.exe program to reinitialize it.')
+            return input('Enter ID: ')
     except:
         return False
 
@@ -68,8 +72,13 @@ def get_id_from_dict(object_dict:dict, name_key:str='name', id_key:str='id') -> 
         objects.append(object[id_key])
         count += 1
 
-    choice = input('Select an object: ')
-    return objects[int(choice)]
+    if len(objects) > 0:
+        choice = input('Select an object: ')
+        return objects[int(choice)]
+    else:
+        print('No objects found')
+        return input('Enter an object ID: ')
+
 
 def sift_sort(object_dict:dict, search_key:str = None, sort_key:str = None) -> dict:
     """Search a dictionary for objects by one key and/or sort by another key.
@@ -96,7 +105,7 @@ def sift_sort(object_dict:dict, search_key:str = None, sort_key:str = None) -> d
         search_string = input(f'Enter a search string for the object (key = {search_key}): ')
         object_dict = {
             id: object for id, object in object_dict.items()
-                if search_string in object[search_key]
+                if search_string.upper() in object[search_key].upper()
         }
 
     if sort_key:
