@@ -1,3 +1,5 @@
+import canvas_apps.error
+
 from canvas_apps.connect import connect
 from canvas_apps.util.data import paginated_to_dict, dict_str_match
 

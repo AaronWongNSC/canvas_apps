@@ -1,6 +1,6 @@
 from canvas_apps.connect import connect, get_course
-from canvas_apps.util.data import json_read
-from canvas_apps.ui import get_id_from_file, get_id_from_dict, sift_sort
+from canvas_apps.util.data import commas, load_discussions, load_users
+from canvas_apps.ui import sift_sort
 from canvas_apps.discussions import get_all_entries
 
 ## Connect to Canvas
@@ -8,31 +8,36 @@ canvas = connect()
 course = get_course(canvas)
 
 ## Load user and discussion_topic data
-users = json_read(f'course_data/{course.id}-users')
-discussion_topics = json_read(f'course_data/{course.id}-discussion-topics')
+users = load_users(course)
+discussion_topics = load_discussions(course)
 
-## Get the discussion_topic
-topic_id = get_id_from_dict(discussion_topics, 'title')
-topic = course.get_discussion_topic(topic_id)
-entries = get_all_entries(topic)
+## Prepare for the data
+post_counts = {
+    user_id: {
+        topic_id: 0 for topic_id in discussion_topics
+    } for user_id in users
+}
 
-# Count posts
-post_count = {}
-for _, entry in entries.items():
-    if entry.user_id not in post_count.keys():
-        post_count[entry.user_id] = {'count': 0}
-    post_count[entry.user_id]['count'] += 1
+for user_id in users:
+    post_counts[user_id]['sortable_name'] = users[user_id]['sortable_name']
 
-# Display results
-for user, contents in post_count.items():
-    if str(user) in users.keys():
-        print(f'{users[str(user)]['sortable_name']}: {contents['count']}')
-        contents['sortable_name'] = users[str(user)]['sortable_name']
+for topic_id, discussion in discussion_topics.items():
+    ## Get the discussion_topic
+    print(f'Getting entries for {discussion['title']}')
+    topic = course.get_discussion_topic(topic_id)
+    entries = get_all_entries(topic)
+
+    # Count posts
+    for _, entry in entries.items():
+        try:
+            post_counts[str(entry.user_id)][topic_id] += 1
+        except:
+            pass
 
 # Write results to CSV
-post_count = sift_sort(post_count, sort_key='sortable_name')
+post_counts = sift_sort(post_counts, sort_key='sortable_name')
 
-with open(f'{course.id}-{topic.title}.csv', 'w') as file:
-    file.write('student_name,post_count\n')
-    for _, contents in post_count.items():
-        file.write(f'"{contents['sortable_name']}",{contents['count']}\n')
+with open(f'{course.id}-discussions.csv', 'w') as file:
+    file.write(commas(['student_name'] + [ discussion['title'] for _, discussion in discussion_topics.items() ]))
+    for _, contents in post_counts.items():
+        file.write(commas([contents['sortable_name']] + [ contents[topic_id] for topic_id in discussion_topics ]))

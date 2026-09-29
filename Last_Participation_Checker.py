@@ -1,18 +1,8 @@
+import canvas_apps.error
+
 from canvas_apps.connect import connect, get_course
 from canvas_apps.util.data import load_users, load_assignments
 from canvas_apps.util.date import ztime_to_local
-
-########### ERROR CATCHER
-import sys
-import traceback
-
-def hold_window_on_error(exc_type, exc_value, tb):
-    traceback.print_exception(exc_type, exc_value, tb)    
-    input("\nAn error occurred. Press Enter to close...")
-    sys.exit(-1)
-
-sys.excepthook = hold_window_on_error
-######################################################################
 
 ## Connect to Canvas
 canvas = connect()
