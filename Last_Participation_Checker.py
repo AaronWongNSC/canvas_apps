@@ -1,6 +1,6 @@
 import canvas_apps.error
 
-from canvas_apps.connect import connect, get_course
+from canvas_apps.connect import connect, get_course, disconnect
 from canvas_apps.util.data import load_users, load_assignments
 from canvas_apps.util.date import ztime_to_local
 
@@ -57,3 +57,7 @@ with open(f'Last-Participation-{course.id}-{course.name}.csv', 'w') as out_file:
         if student['submission']:
             last_submission = ztime_to_local(student['submission'])
         out_file.write(f'{student['name']},{last_due_date},{last_submission}\n')
+
+print(f'Participation data can be found in the file called "Last-Participation-{course.id}-{course.name}.csv"')
+
+disconnect()

@@ -64,6 +64,8 @@ elif command == 2:
         reader = csv.DictReader(in_file)
 
         for row in reader:
+            if row['assignment_name'].strip() == '':
+                continue
 
             ## Set midnight times for non-existent times
             if row['unlock_time'].strip() == '':
@@ -107,6 +109,6 @@ elif command == 2:
             )
 
             ## Display
-            print(f'Updatng {assignment.name} - Unlock: {unlock_at_local} / Due: {due_at_local} / Lock: {lock_at_local}')
+            print(f'Updating {assignment.name} - Unlock: {unlock_at_local} / Due: {due_at_local} / Lock: {lock_at_local}')
 
 disconnect()
