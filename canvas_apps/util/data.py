@@ -6,12 +6,30 @@ from canvasapi.canvas import Canvas
 from canvasapi.course import Course
 from canvasapi.paginated_list import PaginatedList
 
+from canvas_apps.ui import display_message, display_long_message
 from canvas_apps.util.date import local_dt_to_ztime
 
 from datetime import datetime
 from pathlib import Path
 
 import json
+
+def clear_data_files() -> None:
+    """Clears all files in the course_data folder
+ 
+     Parameters
+     ----------
+     None
+ 
+     Returns
+     -------
+     None
+     """
+    dir_path = Path('course_data')
+    for file in dir_path.iterdir():
+        if file.is_file():
+            file.unlink()
+    display_message('DATA FILES DELETED')
 
 def commas(values:list) -> str:
     """Prepares values to be inserted into a CSV file so that quotes and commas do not
@@ -76,7 +94,7 @@ def inventory(paginated: PaginatedList, filename: str, id:str = 'id') -> dict:
     """
     data = paginated_to_dict(paginated, id)
     json_write(data, filename)
-    print(f'{filename} inventory complete.')
+    display_message(f'Inventory complete: {filename}')
     return data
 
 def json_write(data: dict, filename: str) -> None:
@@ -140,8 +158,9 @@ def load_announcements(canvas:Canvas, course:Course) -> dict:
     filename = f'course_data/{course.id}-announcements.json'
     file_path = Path(filename)
     if not file_path.is_file():
-        print(f'Announcement data for {course.name} ({course.id}) not found at {filename}')
-        print('Downloading data from Canvas')
+        display_long_message([
+            f'Announcement data for {course.name} ({course.id}) not found at {filename}',
+            'Downloading data from Canvas'])
         start_date = course.created_at
         end_date = local_dt_to_ztime(datetime.now())
         inventory(canvas.get_announcements([course], start_date=start_date, end_date=end_date), filename)
@@ -163,8 +182,9 @@ def load_assignments(course:Course) -> dict:
     filename = f'course_data/{course.id}-assignments.json'
     file_path = Path(filename)
     if not file_path.is_file():
-        print(f'Assignment data for {course.name} ({course.id}) not found at {filename}')
-        print('Downloading data from Canvas')
+        display_long_message([
+            f'Assignment data for {course.name} ({course.id}) not found at {filename}',
+            'Downloading data from Canvas'])
         inventory(course.get_assignments(), filename)
     return json_read(filename)
 
@@ -184,9 +204,32 @@ def load_assignment_groups(course:Course) -> dict:
     filename = f'course_data/{course.id}-assignment_groups.json'
     file_path = Path(filename)
     if not file_path.is_file():
-        print(f'Assignment group data for {course.name} ({course.id}) not found at {filename}')
-        print('Downloading data from Canvas')
+        display_long_message([
+            f'Assignment grouop data for {course.name} ({course.id}) not found at {filename}',
+            'Downloading data from Canvas'])
         inventory(course.get_assignment_groups(), filename)
+    return json_read(filename)
+
+def load_courses(canvas:Canvas) -> dict:
+    """Loads course data. First attempt is by file, then through Canvas.
+	
+    Parameters
+    ----------
+    course: Course
+        The Course from which to load the data.
+
+    Returns
+    -------
+    dict
+        A dictionary that contains the data.
+    """
+    filename = f'course_data/courses.json'
+    file_path = Path(filename)
+    if not file_path.is_file():
+        display_long_message([
+            f'Course data not found at {filename}',
+            'Downloading data from Canvas'])
+        inventory(canvas.get_courses(), filename)
     return json_read(filename)
 
 def load_discussions(course:Course) -> dict:
@@ -205,8 +248,9 @@ def load_discussions(course:Course) -> dict:
     filename = f'course_data/{course.id}-discussions.json'
     file_path = Path(filename)
     if not file_path.is_file():
-        print(f'Discussions data for {course.name} ({course.id}) not found at {filename}')
-        print('Downloading data from Canvas')
+        display_long_message([
+            f'Discussions data for {course.name} ({course.id}) not found at {filename}',
+            'Downloading data from Canvas'])
         inventory(course.get_discussion_topics(), filename)
     return json_read(filename)
 
@@ -226,8 +270,9 @@ def load_files(course:Course) -> dict:
     filename = f'course_data/{course.id}-files.json'
     file_path = Path(filename)
     if not file_path.is_file():
-        print(f'File data for {course.name} ({course.id}) not found at {filename}')
-        print('Downloading data from Canvas')
+        display_long_message([
+            f'File data for {course.name} ({course.id}) not found at {filename}',
+            'Downloading data from Canvas'])
         inventory(course.get_files(), filename)
     return json_read(filename)
 
@@ -247,8 +292,9 @@ def load_modules(course:Course) -> dict:
     filename = f'course_data/{course.id}-modules.json'
     file_path = Path(filename)
     if not file_path.is_file():
-        print(f'Module data for {course.name} ({course.id}) not found at {filename}')
-        print('Downloading data from Canvas')
+        display_long_message([
+            f'Module data for {course.name} ({course.id}) not found at {filename}',
+            'Downloading data from Canvas'])
         inventory(course.get_modules(), filename)
     return json_read(filename)
 
@@ -268,8 +314,9 @@ def load_pages(course:Course) -> dict:
     filename = f'course_data/{course.id}-pages.json'
     file_path = Path(filename)
     if not file_path.is_file():
-        print(f'Page data for {course.name} ({course.id}) not found at {filename}')
-        print('Downloading data from Canvas')
+        display_long_message([
+            f'Page data for {course.name} ({course.id}) not found at {filename}',
+            'Downloading data from Canvas'])
         inventory(course.get_pages(), filename, id='page_id')
     return json_read(filename)
 
@@ -289,8 +336,9 @@ def load_users(course:Course) -> dict:
     filename = f'course_data/{course.id}-users.json'
     file_path = Path(filename)
     if not file_path.is_file():
-        print(f'User data for {course.name} ({course.id}) not found at {filename}')
-        print('Downloading data from Canvas')
+        display_long_message([
+            f'User data for {course.name} ({course.id}) not found at {filename}',
+            'Downloading data from Canvas'])
         inventory(course.get_users(enrollment_type=['student', 'student_view', 'teacher', 'ta', 'designer', 'observer']), filename)
     return json_read(filename)
 
