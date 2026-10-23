@@ -5,22 +5,19 @@ Main connection scripts
 from canvasapi import Canvas
 from canvasapi.course import Course
 
-from canvas_apps.util.data import paginated_to_dict, dict_str_match
-from canvas_apps.ui import get_id_from_file
+from canvas_apps.config import load_config, update_key
+from canvas_apps.ui import display_message, get_id_from_list, prompt
 
-from pathlib import Path
-
-def connect(INSTITUTION:str = 'nevadastate') -> Canvas:
+def connect() -> Canvas:
     """Begins the connection protocol to Canvas through canvasapi.
 
     1) Request the connection type (test, beta, main/production)
-    2) Check for an API key for the given connection (filenames: test_key.txt, beta_key.txt, main_key.txt)
+    2) Check for an API key for the given connection (located in config/config.json)
     3) Test the connection
 
     Parameters
     ----------
-    INSTITUTION
-        Institutional name for the URL (INSTITUTION.instructure.com)
+    None
 
     Returns
     -------
@@ -28,95 +25,76 @@ def connect(INSTITUTION:str = 'nevadastate') -> Canvas:
         A logged-in Canvas instance (or an error message if something went wrong)
     """
 
+    config = load_config()
+    institution = config['prefix']
+    
     ## Connection Selection
-    choice = ''
-    while choice not in [1, 2, 3]:
-        print('\nConnection Options:')
-        print(f'1) {INSTITUTION}.test.instructure.com (API_KEY file: test_key.txt)')
-        print(f'2) {INSTITUTION}.beta.instructure.com (API_KEY file: beta_key.txt)')
-        print(f'3) {INSTITUTION}.instructure.com (API_KEY file: main_key.txt)')
-        choice = int(input('Select a connection: '))
+    while True:
+        selection = prompt([
+            f'(1) {institution}.test.instructure.com',
+            f'(2) {institution}.beta.instructure.com',
+            f'(3) {institution}.instructure.com'
+        ])
 
-    if choice == 1:
-        API_URL = f'https://{INSTITUTION}.test.instructure.com'
-        key_file = 'test_key.txt'
-    if choice == 2:
-        API_URL = f'https://{INSTITUTION}.beta.instructure.com'
-        key_file = 'beta_key.txt'
-    if choice == 3:
-        print('\n ----- WARNING: YOU ARE ABOUT TO EDIT STUDENT-FACING DATA ----- \n')
-        test = input('Type "confirm" to confirm that you want to do this: ')
-        if not test.strip().upper() == 'CONFIRM':
-            disconnect()
-        API_URL = f'https://{INSTITUTION}.instructure.com'
-        key_file = 'main_key.txt'
+        if selection == '1':
+            API_URL = f'https://{institution}.test.instructure.com'
+            key = config['test_key']['key']
+            if key is None:
+                key = update_key('test_key')['key']
+            API_KEY = key
         
-    ## Get API_KEY from file
-    try:
-        with open(key_file, 'r') as file:
-            API_KEY = file.read().strip()
-    except:
-        ### Print instructions
-        print(f'ERROR: {key_file} not found.')
-        print(f'''
-To get an API key:
-1) Log into the appropriate Canvas instance
-2) Click "Account" (at the top-left corner)
-3) Select "Settings"
-4) Click the blue "+ New Access Token" button
-5) Enter a purpose (this can be anything), and an expiration date and time (typically a week or two in the future)
-6) Click "Generate Token"
-7) A window will pop up with your API key next to "Token" (it is the long string of text)
-8) Copy this into a plain text file in this folder. Use the filename {key_file}.
+        if selection == '2':
+            API_URL = f'https://{institution}.beta.instructure.com'
+            key = config['beta_key']['key']
+            if key is None:
+                key = update_key('beta_key')['key']
+            API_KEY = key
+        if selection == '3':
+            print('\n ----- WARNING: YOU ARE ABOUT TO EDIT STUDENT-FACING DATA ----- \n')
+            test = input('Type "confirm" to confirm that you want to do this: ')
+            if not test.strip().upper() == 'CONFIRM':
+                break
+            API_URL = f'https://{institution}.instructure.com'
+            key = config['main_key']['key']
+            if key is None:
+                key = update_key('main_key')['key']
+            API_KEY = key
+        
+        ## Get API_KEY from file
+        if not API_KEY:
+            ### Print instructions
+            display_message('ERROR: API_KEY not found.')
+            break
 
-''')
-        disconnect()
-
-    ### Test Connection
-    try:
-        canvas = Canvas(API_URL, API_KEY)
-        canvas.get_current_user()
-        print('Connection successful!')
-        return canvas
-    except Exception as e:
-        print(f'An error occurred: {e}')
-        disconnect()
+        ### Test Connection
+        try:
+            canvas = Canvas(API_URL, API_KEY)
+            canvas.get_current_user()
+            display_message('Connection successful!')
+            return canvas
+        except Exception as e:
+            display_message(f'An error occurred: {e}')
+            disconnect()
 
 def get_course(canvas:Canvas) -> Course:
-    filename = 'course_data/courses.csv'
-    file_path = Path(filename)
-    if not file_path.is_file():
-        print(f'Course data not found at {filename}')
-        ## Check if the course_data folder exists. Create it if it doesn't.
-        folder_path = Path('course_data')
-        folder_path.mkdir(parents=True, exist_ok=True)
+    """Creates a canvasapi Course object from a list of courses.
 
-        ## Get full list of courses
-        courses = paginated_to_dict(canvas.get_courses())
+    Parameters
+    ----------
+    canvas: Canvas
+        A canvas instance
 
-        ## Search
-        search_string = input('Enter the search string for the course titles: ')
-        matches = dict_str_match(courses, 'name', search_string)
+    Returns
+    -------
+    Course
+        A Course instance
+    """
+    config = load_config()
+    if len(config['course_list']) == 0:
+        display_message('No courses available -- Run the setup tool to create a course list')
+        return None
 
-        if matches:
-            ## If matches found, determine whether to add or replace
-            print('Matches Found: ')
-            my_courses = {}
-            for course in matches:
-                my_courses[course['id']] = course['name']
-
-            ## Update the courses.csv file
-            with open(filename, 'w') as file:
-                file.write('id,name\n')
-                for id, name in my_courses.items():
-                    file.write(f'{id},{name}\n')
-        else:
-            print('No matches\n')
-            with open(filename, 'w') as file:
-                file.write('id,name\n')
-
-    course_id = get_id_from_file(filename)
-
+    course_id = get_id_from_list(config['course_list'])
     return canvas.get_course(course_id)
 
 def disconnect():

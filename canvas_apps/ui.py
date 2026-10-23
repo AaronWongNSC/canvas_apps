@@ -3,6 +3,39 @@ Creates menus for different scenarios
 """
 import csv
 
+def display_message(message:str) -> None:
+    """Standardized message system for short messages
+
+    Parameters
+    ----------
+    message
+        The message to display.
+    
+    Returns
+    -------
+    None
+    """
+    print(f'\n*** {message} ***\n')
+    return 
+
+def display_long_message(message_list:list[str]) -> None:
+    """Standardized message system for long messages
+
+    Parameters
+    ----------
+    message_list
+        A list of strings to display
+    
+    Returns
+    -------
+    None
+    """
+    print(f'\n**********************************************************************')
+    for message in message_list:
+        print(f'** {message.strip()}')
+    print(f'**********************************************************************')
+    return 
+
 def get_id_from_file(file:str = None) -> int:
     """Select an object from a list stored as a CSV file.
 
@@ -63,7 +96,6 @@ def get_id_from_dict(object_dict:dict, name_key:str='name', id_key:str='id') -> 
         The ID of the desired object.
 
     """
-
     objects = []
 
     count = 0
@@ -100,21 +132,71 @@ def get_ids_from_dict(object_dict:dict, name_key:str='name', id_key:str='id') ->
 
     """
 
-    objects = []
-
-    count = 0
-    for key, object in object_dict.items():
-        print(f'{count}: {object[name_key]} ({object[id_key]})')
-        objects.append(object[id_key])
-        count += 1
+    objects = [ object[id_key] for _, object in object_dict.items() ]
 
     if len(objects) > 0:
-        choices = input('Select objects (use a comma to separate items): ').split(',')
+        choices = prompt(
+            [ f'({count}) {object[name_key]} ({object[id_key]})' for count, (_, object) in enumerate(object_dict.items()) ],
+            prompt='Selections (use commas to separate items):').split(',')
         return [ objects[int(choice)] for choice in choices ]
     else:
         print('No objects found')
-        choices = input('Enter the object IDs (use a comma to separate items): ').split(',')
-        return [ choice for choice in choices]
+        return input('Enter the object IDs (use a comma to separate items): ').split(',')
+
+
+def get_id_from_list(object_list:list[dict], name_key:str='name', id_key:str='id') -> int:
+    """Select an object from a list.
+
+    Parameters
+    ----------
+    object_dict
+        A dictionary of objects. The keys for object_dict can be anything.
+    
+    name_key
+        The key for the name of the objects.
+    
+    id_key
+        The key for the object ID.
+
+    Returns
+    -------
+    int
+        The ID of the desired object.
+    """
+
+    if len(object_list) > 0:
+        selection = prompt([ f'{count}: {object[name_key]} ({object[id_key]})' for count, object in enumerate(object_list) ],
+               title='COURSE SELECTION')
+        return object_list[int(selection)][id_key]
+    else:
+        print('No objects found')
+        return input('Enter an object ID: ')
+   
+def prompt(list_of_options:list[str], title:str = None, prompt:str = None, upper:bool = True) -> str:
+    """Standardized menu display
+
+    Parameters
+    ----------
+    list_of_options
+        A list of strings that will represent the options.
+    
+    Returns
+    -------
+    str
+        The selection (stripped and forced into uppercase)
+    """
+    if title == None:
+        title = 'Select from the following list'
+    if prompt == None:
+        prompt = 'Selection:'
+
+    print(f'\n--- {title} ---\n')
+    for option in list_of_options:
+        print(option)
+    print()
+    if upper:
+        return input(prompt.strip() + ' ').strip().upper()
+    return input(prompt.strip() + ' ').strip()
 
 def sift_sort(object_dict:dict, search_key:str = None, sort_key:str = None) -> dict:
     """Search a dictionary for objects by one key and/or sort by another key.
