@@ -6,10 +6,6 @@
  * Ensure windows stay open after errors and program completion to allow program feedback to be read.
  * 
 
-## [0.0.1] - 2026-10-15
- * Begin tracking changes
- * Existing programs: Announcement_Loader, Course_List_Generator, Due_Date_Adjuster, Last_Participation_Checker, Participation_Grader, Text_Entry_Fast_Grader
-
 ## [1.0.0] - 2026-10-23
  * Added
    * OmniTool
@@ -23,6 +19,10 @@
    * Created message display tools under canvas_apps/ui
  * Removed
    * Course_List_Generator
+
+## [0.0.1] - 2026-10-15
+ * Begin tracking changes
+ * Existing programs: Announcement_Loader, Course_List_Generator, Due_Date_Adjuster, Last_Participation_Checker, Participation_Grader, Text_Entry_Fast_Grader
 
 ## Notes:
 Categories: Added, Fixed, Changed, Removed, Deprecated
