@@ -3,13 +3,6 @@ Apps for Canvas using the API
 
 The canvas_apps folder is a library of tools that the various programs use.
 
-# How to Connect
-```
-from canvas_apps.connect import connect
-canvas = connect(INSTITUTION)
-```
-Here, `INSTITUTION` is the institution URL, as in `INSTITUTION.instructure.com`. To connect, you will need to have an API key from the appropriate Canvas instance as a text file in the same folder as the script you are using. The file names are test_key.txt, beta_key.txt, and main_key.txt. To prevent accidental changes to the production (main) instance, you will need to confirm that you really want to use that key when you select it.
-
 # OmniTool
 
 The OmniTool is an organizational device that makes it easier for me to add programs. The programs can also be called separately if you wanted to run them on their own.
@@ -23,6 +16,8 @@ This program creates a the course_data and config folders. Inside the config fol
 You need to store a valid API key before you will be able to build the course list (since the course list is retrieved from Canvas). The search string searches course titles, and here are a couple useful search patterns:
  * FaXX and SpXX: Under the Nevada State University naming convention, this will get the courses for Fall 20XX and Spring 20XX.
  * SUBJECT COURSE_NUMBER: For example, "MATH 120". Note that the space is required for Nevada State University courses because of the naming convention.
+
+Once the course list is built, you should be able to run any of the applications.
 
 # Applications
 
